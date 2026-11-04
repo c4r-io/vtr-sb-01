@@ -195,7 +195,9 @@
   .r2block .stepline { font-size: 0.8125rem; font-weight: 600; color: var(--muted); margin-bottom: 0.5rem; }
 
   /* ---- validity map ---- */
-  .mapwrap { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 0.75rem; margin: 1rem 0; }
+  .maprow { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0.75rem; align-items: stretch; margin: 1rem 0; }
+  .mapwrap { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 0.5rem; min-width: 0; display: flex; align-items: center; }
+  .mapwrap > div { width: 100%; min-width: 0; }
   .map { width: 100%; height: auto; display: block; font-family: "Poppins", Arial, sans-serif; }
   .map .frame { fill: none; stroke: var(--line); }
   .map .mid { stroke: var(--line); stroke-dasharray: 4 4; }
@@ -210,9 +212,9 @@
   .mtable th { font-weight: 700; font-size: 0.8125rem; }
   .mtable td.num { text-align: right; white-space: nowrap; }
   .mtable th.num { text-align: right; }
-  .defs { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin: 1rem 0; }
-  .def { border: 1px solid var(--line); border-radius: 8px; padding: 0.75rem 0.9rem; font-size: 0.9375rem; }
-  .def h4 { margin-bottom: 0.25rem; }
+  .defs { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
+  .def { flex: 1; border: 1px solid var(--line); border-radius: 8px; padding: 0.7rem 0.85rem; font-size: 0.875rem; line-height: 1.45; }
+  .def h4 { margin-bottom: 0.25rem; font-size: 0.9375rem; }
 
   /* ---- sandbox ---- */
   .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 0.6rem 1rem; margin: 0.75rem 0 1rem; }
@@ -241,7 +243,7 @@
   .quiz .prompt { margin-bottom: 0.6rem; }
   .opts { display: flex; flex-direction: column; gap: 0.6rem; }
   .opt {
-    display: block; position: relative; border: 1px solid var(--line); border-radius: 8px; padding: 0.65rem 0.8rem 0.65rem 2.6rem;
+    display: block; position: relative; border: 1px solid var(--line); border-radius: 8px; padding: 0.65rem 2.9rem 0.65rem 2.6rem;
     background: var(--surface); cursor: pointer; font-size: 0.9375rem; line-height: 1.45; transition: border-color 0.2s ease, background-color 0.2s ease;
   }
   .opt:hover { border-color: var(--brand); }
@@ -287,7 +289,7 @@
     *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
   }
   @media (max-width: 40rem) {
-    .sets, .defs, .gauges { grid-template-columns: 1fr; }
+    .sets, .maprow, .gauges { grid-template-columns: 1fr; }
   }
 </style>
 
@@ -357,13 +359,15 @@
   <section class="page" id="page-3">
     <h2>Two different questions</h2>
     <p>Every analysis set answers two separate questions. Here is where your three landed.</p>
-    <div class="mapwrap"><div id="map"></div></div>
+    <div class="maprow">
+      <div class="mapwrap"><div id="map"></div></div>
+      <div class="defs">
+        <div class="def"><h4>Internal validity</h4><p>Whether the study's findings accurately reflect the relationship being investigated within the study population. Selection bias attacks this one.</p></div>
+        <div class="def"><h4>External validity (generalizability)</h4><p>Whether those findings can reasonably apply to other populations, settings, or circumstances. A narrow sample limits this one.</p></div>
+      </div>
+    </div>
     <table class="mtable" id="mtable"></table>
     <p class="small">Vertical position is internal validity: how far each set's estimate sits from the true effect of 0. Horizontal position is external validity: how far the set's average severity sits from the colony's average, in standard deviations of the colony.</p>
-    <div class="defs">
-      <div class="def"><h4>Internal validity</h4><p>Whether the study's findings accurately reflect the relationship being investigated within the study population. Selection bias attacks this one.</p></div>
-      <div class="def"><h4>External validity (generalizability)</h4><p>Whether those findings can reasonably apply to other populations, settings, or circumstances. A narrow sample limits this one.</p></div>
-    </div>
     <div class="fb info">
       <p><strong>The takeaway</strong></p>
       <p>A sample that differs from the population is an external validity problem: what you learn may not carry over. A sample that got in for reasons tied to the treatment or the outcome is an internal validity problem: selection bias changes what the study says is true.</p>
@@ -706,7 +710,7 @@ function zFromColony(sample,colony){if(!sample.length)return {z:0,ms:0,mc:colony
 
   /* ---------------- page 3: validity map ---------------- */
   function buildMap() {
-    var MW = 520, MH = 400, L = 64, R = 16, Tp = 24, B = 56;
+    var MW = 440, MH = 400, L = 64, R = 16, Tp = 24, B = 56; /* narrow viewBox: the map shares its row with the definition cards */
     var root = svg("svg", { viewBox: "0 0 " + MW + " " + MH, class: "map", role: "img", "aria-label": T["P4.xTitle"] + " / " + T["P4.yTitle"] });
     var x0 = L, x1 = MW - R, y0 = MH - B, y1 = Tp;
     var IN = 26; /* inset so a point at 0 or 1 sits inside the frame, clear of the quadrant labels */
@@ -725,14 +729,22 @@ function zFromColony(sample,colony){if(!sample.length)return {z:0,ms:0,mc:colony
     root.appendChild(svg("text", { x: 16, y: ym, "text-anchor": "middle", class: "atitle", transform: "rotate(-90 16 " + ym + ")" }, T["P4.yTitle"] + " →"));
     root.appendChild(svg("text", { x: x0 - 6, y: y0 - 2, "text-anchor": "end", class: "aend" }, T["P4.yLo"]));
     root.appendChild(svg("text", { x: x0 - 6, y: y1 + 12, "text-anchor": "end", class: "aend" }, T["P4.yHi"]));
-    var rows = [];
+    var rows = [], boxes = [], CW = 6.6, LH = 14; /* approximate label metrics for collision checks */
+    function box(x, y, w, anchor) { var l = anchor === "end" ? x - w : anchor === "middle" ? x - w / 2 : x; return { l: l, r: l + w, t: y - LH, b: y + 3 }; }
+    function hits(b) { return boxes.some(function (o) { return b.l < o.r + 4 && b.r > o.l - 4 && b.t < o.b + 2 && b.b > o.t - 2; }); }
     ORDER.forEach(function (k) {
       var S = SETS[k], ex = external(S.sample), it = internal(S.stats);
       var px = mx(ex.score), py = my(it.score);
       root.appendChild(svg("circle", { cx: px, cy: py, r: 9, class: "pt " + (it.score < 0.5 ? "b" : "") , "data-set": k }));
-      var lx = px + 14, anchor = "start";
-      if (px - x0 > 150) { lx = px - 14; anchor = "end"; } /* label to the left whenever there is room, so the top labels never collide */
-      root.appendChild(svg("text", { x: lx, y: py + 4, "text-anchor": anchor, class: "pl" }, S.name));
+      var w = S.name.length * CW;
+      /* beside the dot (left when there is room), else below it, else above it */
+      var cands = [px - x0 > w + 20 ? [px - 14, py + 4, "end"] : [px + 14, py + 4, "start"],
+                   [Math.max(x0 + w / 2 + 4, Math.min(x1 - w / 2 - 4, px)), py + 24, "middle"],
+                   [Math.max(x0 + w / 2 + 4, Math.min(x1 - w / 2 - 4, px)), py - 14, "middle"]];
+      var c = cands[0];
+      for (var i = 0; i < cands.length; i++) { if (!hits(box(cands[i][0], cands[i][1], w, cands[i][2]))) { c = cands[i]; break; } }
+      boxes.push(box(c[0], c[1], w, c[2]));
+      root.appendChild(svg("text", { x: c[0], y: c[1], "text-anchor": c[2], class: "pl" }, S.name));
       rows.push({ k: k, S: S, ex: ex, it: it });
     });
     $("#map").innerHTML = ""; $("#map").appendChild(root);
