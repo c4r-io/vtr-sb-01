@@ -95,8 +95,7 @@
   .vizside { min-width: 0; display: flex; flex-direction: column; gap: 0.75rem; }
   .vizside .fb { margin-top: 0; }
   .vizside .btnrow { margin: 0; }
-  /* a plot on its own at the same width as the 3fr column, centered (round 1) */
-  .plotwrap.viz-center { max-width: 26rem; margin: 0.75rem auto; }
+
 
   .pager {
     display: flex; justify-content: space-between; gap: 1rem;
@@ -172,12 +171,10 @@
   .plot .dot.flag { stroke: #111111; stroke-width: 1.6; }
   .plot .dot.out { opacity: 0.12; }
   .plot .dot.ghost { opacity: 1; fill: #ffffff; stroke: var(--bad); stroke-width: 1.6; }
-  .plot .mean { stroke-width: 3; stroke-linecap: round; transition: y1 0.5s ease, y2 0.5s ease; }
-  .plot .mean.t { stroke: var(--brand); }
-  .plot .mean.c { stroke: var(--blue); }
-  .plot .mlabel { font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; paint-order: stroke; stroke: #ffffff; stroke-width: 3px; stroke-linejoin: round; }
-  .plot .mlabel.t { fill: var(--brand-dark); }
-  .plot .mlabel.c { fill: #0057aa; }
+  /* mean lines are near-black over a white casing: in the arm colours they vanished among the dots */
+  .plot .meancase { stroke: #ffffff; stroke-width: 7; stroke-linecap: round; }
+  .plot .mean { stroke: #111111; stroke-width: 3; stroke-linecap: round; }
+  .plot .mlabel { font-size: 11px; font-weight: 700; fill: #111111; font-variant-numeric: tabular-nums; paint-order: stroke; stroke: #ffffff; stroke-width: 3px; stroke-linejoin: round; }
   .legend { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.75rem; color: var(--muted); margin-top: 0.35rem; padding-left: 0.25rem; }
   .legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
   .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
@@ -325,7 +322,6 @@
   }
   @media (max-width: 40rem) {
     .sets, .maprow, .vizrow, .gauges { grid-template-columns: 1fr; }
-    .plotwrap.viz-center { max-width: none; }
   }
 </style>
 
@@ -370,7 +366,7 @@
     <div class="sets" id="r1sets"></div>
     <div class="btnrow"><button type="button" class="btn primary" id="r1run" disabled>Run the analysis</button></div>
     <div id="r1result" hidden>
-      <div class="plotwrap viz-center"><div id="r1plot"></div></div>
+      <div class="plotwrap"><div id="r1plot"></div></div>
       <p class="readout" id="r1read"></p>
       <p class="prompt" id="r1vq" style="margin-top:1rem">Based on this set, what does Compound X do?</p>
       <div class="choices" id="r1verdict"></div>
@@ -610,10 +606,15 @@ function zFromColony(sample,colony){if(!sample.length)return {z:0,ms:0,mc:colony
   var NS = "http://www.w3.org/2000/svg";
   function svg(tag, attrs, text) { var e = document.createElementNS(NS, tag); Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); }); if (text !== undefined) e.textContent = text; return e; }
   function jitter(id) { var h = (id * 2654435761) % 4294967296; return ((h % 1000) / 1000 - 0.5) * 2; }
-  /* viewBox sized for the 3fr column it shares with its readout (same width as the validity map) */
-  var W = 400, H = 340, PL = 44, PR = 10, PT = 16, PB = 34, XC = 128, XT = 298, SPREAD = 60;
-  function yOf(v) { return PT + (10 - v) / 10 * (H - PT - PB); }
-  function plot(container, sample, ghosts) {
+  /* two plot geometries: narrow for the 3fr column pages 3 and 5 share with a side column (same width as the validity map); wide for round 1, which is drawn at full width */
+  var GEOM = {
+    narrow: { W: 400, H: 340, PL: 44, PR: 10, PT: 16, PB: 34, XC: 128, XT: 298, SPREAD: 60 },
+    wide:   { W: 560, H: 340, PL: 46, PR: 16, PT: 16, PB: 34, XC: 180, XT: 410, SPREAD: 78 }
+  };
+  function plot(container, sample, ghosts, wide) {
+    var G = wide ? GEOM.wide : GEOM.narrow;
+    var W = G.W, H = G.H, PL = G.PL, PR = G.PR, PT = G.PT, PB = G.PB, XC = G.XC, XT = G.XT, SPREAD = G.SPREAD;
+    function yOf(v) { return PT + (10 - v) / 10 * (H - PT - PB); }
     var inSet = {}; sample.forEach(function (m) { inSet[m.id] = true; });
     var s = stats(sample);
     var root = svg("svg", { viewBox: "0 0 " + W + " " + H, class: "plot", role: "img", "aria-label": T["SH.yaxis"] });
@@ -639,6 +640,7 @@ function zFromColony(sample,colony){if(!sample.length)return {z:0,ms:0,mc:colony
     if (s.ok) {
       [["c", XC, s.mc], ["t", XT, s.mt]].forEach(function (a) {
         var y = yOf(a[2]);
+        root.appendChild(svg("line", { x1: a[1] - SPREAD - 8, x2: a[1] + SPREAD + 8, y1: y, y2: y, class: "meancase" }));
         root.appendChild(svg("line", { x1: a[1] - SPREAD - 8, x2: a[1] + SPREAD + 8, y1: y, y2: y, class: "mean " + a[0] }));
         root.appendChild(svg("text", { x: a[1] + SPREAD + 8, y: y - 6, "text-anchor": "end", class: "mlabel " + a[0] }, fill(T["SH.meanLabel"], { m: a[2].toFixed(1) })));
       });
@@ -706,7 +708,7 @@ function zFromColony(sample,colony){if(!sample.length)return {z:0,ms:0,mc:colony
       $$("#r1sets .set").forEach(function (x) { x.disabled = true; });
       var S = SETS[r1.set];
       $("#r1result").hidden = false;
-      var s = plot($("#r1plot"), S.sample, "faint");
+      var s = plot($("#r1plot"), S.sample, "faint", true);
       $("#r1read").innerHTML = estHTML(s);
       var vb = $("#r1verdict"); vb.innerHTML = "";
       VERDICTS.forEach(function (v) {
@@ -721,7 +723,7 @@ function zFromColony(sample,colony){if(!sample.length)return {z:0,ms:0,mc:colony
       $("#r1lock").disabled = true;
       $$("#r1verdict .choice").forEach(function (x) { x.disabled = true; });
       var S = SETS[r1.set], s = S.stats, rd = reading(s);
-      plot($("#r1plot"), S.sample, S.ghosts);
+      plot($("#r1plot"), S.sample, S.ghosts, true);
       var box = $("#r1reveal"); box.innerHTML = ""; box.hidden = false;
       box.appendChild(el("div", "fb info", "<p>" + T["SH.truth"] + "</p><p>" + fill(T["P2.yours"], { v: VNAME[r1.verdict], r: READ[rd] }) + "</p>"));
       var ex = el("div", "fb " + (rd === "none" ? "good" : "bad"));
