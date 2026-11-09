@@ -90,13 +90,13 @@
   /* ---- plot beside its readout: the strip plot takes the same 3fr column as the validity map ---- */
   .vizrow { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0.75rem; align-items: start; margin: 0.75rem 0; }
   .vizrow .plotwrap { margin: 0; }
-  .vizrow .plotwrap.sticky { position: sticky; top: 0.75rem; }
+  .vizmain { min-width: 0; }
+  .vizmain .readout { margin: 0.5rem 0 0; }
   .vizside { min-width: 0; display: flex; flex-direction: column; gap: 0.75rem; }
-  .vizside .readout { margin: 0; }
   .vizside .fb { margin-top: 0; }
   .vizside .btnrow { margin: 0; }
-  .vizside .prompt { margin-bottom: 0.5rem; }
-  .vizside .choices { margin: 0 0 0.75rem; }
+  /* a plot on its own at the same width as the 3fr column, centered (round 1) */
+  .plotwrap.viz-center { max-width: 26rem; margin: 0.75rem auto; }
 
   .pager {
     display: flex; justify-content: space-between; gap: 1rem;
@@ -262,7 +262,7 @@
   .seg span { display: block; padding: 0.3rem 0.55rem; font-size: 0.8125rem; font-weight: 600; cursor: pointer; background: var(--surface); color: var(--ink); white-space: nowrap; }
   .seg input:checked + span { background: var(--brand); color: #ffffff; }
   .seg input:focus-visible + span { outline: 3px solid var(--brand); outline-offset: -3px; }
-  .gauges { display: grid; grid-template-columns: 1fr; gap: 0.75rem; margin: 0; }
+  .gauges { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin: 0 0 1.25rem; }
   .gauge { border: 1px solid var(--line); border-radius: 8px; padding: 0.7rem 0.9rem; }
   .gauge .glabel { font-size: 0.875rem; font-weight: 700; margin-bottom: 0.4rem; display: flex; justify-content: space-between; gap: 0.5rem; }
   .gauge .gpct { font-variant-numeric: tabular-nums; color: var(--brand); }
@@ -324,8 +324,8 @@
     *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
   }
   @media (max-width: 40rem) {
-    .sets, .maprow, .vizrow { grid-template-columns: 1fr; }
-    .vizrow .plotwrap.sticky { position: static; }
+    .sets, .maprow, .vizrow, .gauges { grid-template-columns: 1fr; }
+    .plotwrap.viz-center { max-width: none; }
   }
 </style>
 
@@ -370,17 +370,11 @@
     <div class="sets" id="r1sets"></div>
     <div class="btnrow"><button type="button" class="btn primary" id="r1run" disabled>Run the analysis</button></div>
     <div id="r1result" hidden>
-      <div class="vizrow">
-        <div class="plotwrap"><div id="r1plot"></div></div>
-        <div class="vizside">
-          <p class="readout" id="r1read"></p>
-          <div>
-            <p class="prompt" id="r1vq">Based on this set, what does Compound X do?</p>
-            <div class="choices" id="r1verdict"></div>
-            <div class="btnrow"><button type="button" class="btn primary" id="r1lock" disabled>Lock in my verdict</button></div>
-          </div>
-        </div>
-      </div>
+      <div class="plotwrap viz-center"><div id="r1plot"></div></div>
+      <p class="readout" id="r1read"></p>
+      <p class="prompt" id="r1vq" style="margin-top:1rem">Based on this set, what does Compound X do?</p>
+      <div class="choices" id="r1verdict"></div>
+      <div class="btnrow"><button type="button" class="btn primary" id="r1lock" disabled>Lock in my verdict</button></div>
     </div>
     <div id="r1reveal" hidden></div>
   </section>
@@ -437,7 +431,10 @@
       <p>Combine filters and watch the two gauges. Every setting recomputes the analysis from the same 240 mice. Two questions below ask you to set the filters a particular way and read what happened.</p>
     </div>
     <div class="vizrow">
-      <div class="plotwrap sticky"><div id="sbplot"></div></div>
+      <div class="vizmain">
+        <div class="plotwrap"><div id="sbplot"></div></div>
+        <p class="readout" id="sbread"></p>
+      </div>
       <div class="vizside">
     <div class="filters" id="filters">
       <fieldset class="f"><legend>Sex</legend><div class="seg">
@@ -466,12 +463,11 @@
       </div></fieldset>
     </div>
     <div class="btnrow"><button type="button" class="btn plain" id="sbreset">Reset filters</button><span class="ncount" id="sbn"></span></div>
-    <p class="readout" id="sbread"></p>
+      </div>
+    </div>
     <div class="gauges">
       <div class="gauge"><div class="glabel"><span>Internal validity</span><span class="gpct" id="gIntPct"></span></div><div class="gbar"><div class="gfill" id="gIntFill"></div></div><div class="gread" id="gIntRead"></div></div>
       <div class="gauge"><div class="glabel"><span>External validity</span><span class="gpct" id="gExtPct"></span></div><div class="gbar"><div class="gfill" id="gExtFill"></div></div><div class="gread" id="gExtRead"></div></div>
-    </div>
-      </div>
     </div>
     <div class="drawer">
       <button type="button" class="dhead" id="notehead" aria-expanded="false" aria-controls="notepanel">
@@ -751,9 +747,10 @@ function zFromColony(sample,colony){if(!sample.length)return {z:0,ms:0,mc:colony
       var ch = el("div", "choices");
       /* the set runs the moment a prediction is chosen, and the prediction can be changed to compare */
       var res = el("div", "vizrow"); res.hidden = true;
-      var pw = el("div", "plotwrap"); var pd = el("div", ""); pw.appendChild(pd); res.appendChild(pw);
+      var main = el("div", "vizmain"); res.appendChild(main);
+      var pw = el("div", "plotwrap"); var pd = el("div", ""); pw.appendChild(pd); main.appendChild(pw);
+      var rdp = el("p", "readout"); main.appendChild(rdp);
       var side = el("div", "vizside"); res.appendChild(side);
-      var rdp = el("p", "readout"); side.appendChild(rdp);
       var out = el("div", ""); side.appendChild(out);
       var plotted = false;
       VERDICTS.forEach(function (v) {
