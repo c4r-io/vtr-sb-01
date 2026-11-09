@@ -82,9 +82,21 @@
   }
   .instructions {
     background: var(--brand-tint); border-left: 3px solid var(--brand);
-    border-radius: 8px; padding: 0.9rem 1.1rem; margin: 1rem 0 1.5rem;
+    border-radius: 8px; padding: 0.9rem 1.1rem; margin: 0 0 1.25rem;
   }
-  .instructions .ilabel { display: block; font-size: 1.125rem; font-weight: 700; color: var(--ink); margin-bottom: 0.25rem; }
+  /* the card's label is the page title (the task), per VTR feedback round 2 */
+  .instructions h2.ilabel { display: block; font-size: 1.25rem; font-weight: 700; line-height: 1.25; color: var(--ink); margin: 0 0 0.3rem; }
+
+  /* ---- plot beside its readout: the strip plot takes the same 3fr column as the validity map ---- */
+  .vizrow { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0.75rem; align-items: start; margin: 0.75rem 0; }
+  .vizrow .plotwrap { margin: 0; }
+  .vizrow .plotwrap.sticky { position: sticky; top: 0.75rem; }
+  .vizside { min-width: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+  .vizside .readout { margin: 0; }
+  .vizside .fb { margin-top: 0; }
+  .vizside .btnrow { margin: 0; }
+  .vizside .prompt { margin-bottom: 0.5rem; }
+  .vizside .choices { margin: 0 0 0.75rem; }
 
   .pager {
     display: flex; justify-content: space-between; gap: 1rem;
@@ -163,7 +175,7 @@
   .plot .mean { stroke-width: 3; stroke-linecap: round; transition: y1 0.5s ease, y2 0.5s ease; }
   .plot .mean.t { stroke: var(--brand); }
   .plot .mean.c { stroke: var(--blue); }
-  .plot .mlabel { font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .plot .mlabel { font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; paint-order: stroke; stroke: #ffffff; stroke-width: 3px; stroke-linejoin: round; }
   .plot .mlabel.t { fill: var(--brand-dark); }
   .plot .mlabel.c { fill: #0057aa; }
   .legend { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.75rem; color: var(--muted); margin-top: 0.35rem; padding-left: 0.25rem; }
@@ -193,11 +205,36 @@
   .r2block.done { border-color: var(--brand); }
   .r2block .set { margin-bottom: 0.75rem; }
   .r2block .stepline { font-size: 0.8125rem; font-weight: 600; color: var(--muted); margin-bottom: 0.5rem; }
+  .r2block .vizrow { margin-bottom: 0; }
 
   /* ---- validity map ---- */
-  .maprow { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0.75rem; align-items: stretch; margin: 1rem 0; }
+  .maprow { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0.75rem; align-items: stretch; margin: 0 0 1.25rem; }
   .mapwrap { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 0.5rem; min-width: 0; display: flex; align-items: center; }
-  .mapwrap > div { width: 100%; min-width: 0; }
+  .mapbox { position: relative; width: 100%; min-width: 0; }
+  .maprow .fb.info { margin: 0; display: flex; flex-direction: column; justify-content: center; }
+  /* axis-name tooltips: the validity definitions live here, not in cards */
+  .map .axhint { cursor: help; outline: none; }
+  .map .axhint .ul { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 2 2; }
+  .map .axhint:hover .atitle, .map .axhint:focus-visible .atitle, .map .axhint[aria-expanded="true"] .atitle { fill: var(--brand); }
+  .map .axhint:hover .ul, .map .axhint:focus-visible .ul, .map .axhint[aria-expanded="true"] .ul { stroke: var(--brand); }
+  .map .axhint:focus-visible .atitle { text-decoration: underline; }
+  .tip {
+    position: absolute; z-index: 2; width: min(16rem, 88%); background: #ffffff; border: 1px solid var(--line); border-radius: 8px;
+    padding: 0.6rem 2rem 0.6rem 0.75rem; font-size: 0.8125rem; line-height: 1.4; color: var(--ink);
+    filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.18));
+  }
+  .tip h4 { font-size: 0.875rem; font-weight: 700; margin-bottom: 0.2rem; }
+  .tip p { font-size: inherit; }
+  .tip .tclose {
+    position: absolute; top: 0.25rem; right: 0.25rem; width: 26px; height: 26px; border: 0; border-radius: 50%;
+    background: transparent; color: var(--muted); font: inherit; font-size: 1.2rem; line-height: 1; cursor: pointer;
+  }
+  .tip .tclose:hover { background: #F5F5F5; color: var(--ink); }
+  /* the internal tip hangs above the map's midline and the external tip sits above the x-axis name, so both can be open at once on a touch screen */
+  .tip.int { left: 7.5%; bottom: 56%; }
+  .tip.int::before { content: ""; position: absolute; left: -7px; bottom: 14px; border: 7px solid transparent; border-left: 0; border-right-color: #ffffff; }
+  .tip.ext { left: 50%; bottom: 6%; transform: translateX(-50%); }
+  .tip.ext::after { content: ""; position: absolute; left: 50%; bottom: -7px; margin-left: -7px; border: 7px solid transparent; border-bottom: 0; border-top-color: #ffffff; }
   .map { width: 100%; height: auto; display: block; font-family: "Poppins", Arial, sans-serif; }
   .map .frame { fill: none; stroke: var(--line); }
   .map .mid { stroke: var(--line); stroke-dasharray: 4 4; }
@@ -207,27 +244,25 @@
   .map .pt { fill: var(--brand); stroke: #ffffff; stroke-width: 2; }
   .map .pt.b { fill: var(--bad); }
   .map .pl { fill: var(--ink); font-size: 12px; font-weight: 600; }
-  .mtable { width: 100%; border-collapse: collapse; font-size: 0.875rem; margin: 0.5rem 0 1rem; font-variant-numeric: tabular-nums; }
+  .mtable { width: 100%; border-collapse: collapse; font-size: 0.875rem; margin: 0; font-variant-numeric: tabular-nums; }
+  .drawer .dpanel .small { margin: 0; }
   .mtable th, .mtable td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
   .mtable th { font-weight: 700; font-size: 0.8125rem; }
   .mtable td.num { text-align: right; white-space: nowrap; }
   .mtable th.num { text-align: right; }
-  .defs { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
-  .def { flex: 1; border: 1px solid var(--line); border-radius: 8px; padding: 0.7rem 0.85rem; font-size: 0.875rem; line-height: 1.45; }
-  .def h4 { margin-bottom: 0.25rem; font-size: 0.9375rem; }
 
   /* ---- sandbox ---- */
-  .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 0.6rem 1rem; margin: 0.75rem 0 1rem; }
+  .filters { display: grid; grid-template-columns: 1fr; gap: 0.5rem; margin: 0; }
   fieldset.f { border: 0; padding: 0; margin: 0; min-width: 0; }
   fieldset.f legend { font-size: 0.8125rem; font-weight: 700; margin-bottom: 0.3rem; padding: 0; }
   .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
   .seg label { position: relative; }
   .seg label + label { border-left: 1px solid var(--line); }
   .seg input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-  .seg span { display: block; padding: 0.3rem 0.7rem; font-size: 0.8125rem; font-weight: 600; cursor: pointer; background: var(--surface); color: var(--ink); white-space: nowrap; }
+  .seg span { display: block; padding: 0.3rem 0.55rem; font-size: 0.8125rem; font-weight: 600; cursor: pointer; background: var(--surface); color: var(--ink); white-space: nowrap; }
   .seg input:checked + span { background: var(--brand); color: #ffffff; }
   .seg input:focus-visible + span { outline: 3px solid var(--brand); outline-offset: -3px; }
-  .gauges { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin: 0.75rem 0; }
+  .gauges { display: grid; grid-template-columns: 1fr; gap: 0.75rem; margin: 0; }
   .gauge { border: 1px solid var(--line); border-radius: 8px; padding: 0.7rem 0.9rem; }
   .gauge .glabel { font-size: 0.875rem; font-weight: 700; margin-bottom: 0.4rem; display: flex; justify-content: space-between; gap: 0.5rem; }
   .gauge .gpct { font-variant-numeric: tabular-nums; color: var(--brand); }
@@ -236,7 +271,7 @@
   .gauge .gread { font-size: 0.8125rem; color: var(--muted); margin-top: 0.4rem; font-variant-numeric: tabular-nums; }
   .ncount { font-size: 0.875rem; font-weight: 600; color: var(--brand); font-variant-numeric: tabular-nums; }
   /* ---- sandbox questions (C4R ExplainedOption + InlineFeedback) ---- */
-  .quiz { border: 1px solid var(--line); border-radius: 8px; padding: 0.9rem 1rem; margin: 1.25rem 0 0; }
+  .quiz { border: 1px solid var(--line); border-radius: 8px; padding: 0.9rem 1rem; margin: 0 0 1rem; }
   .quiz.done { border-color: #2e7d32; }
   .quiz .qh { font-size: 0.8125rem; font-weight: 700; color: var(--brand); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.35rem; }
   .quiz .qsetup { font-size: 0.9375rem; margin-bottom: 0.6rem; }
@@ -289,7 +324,8 @@
     *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
   }
   @media (max-width: 40rem) {
-    .sets, .maprow, .gauges { grid-template-columns: 1fr; }
+    .sets, .maprow, .vizrow { grid-template-columns: 1fr; }
+    .vizrow .plotwrap.sticky { position: static; }
   }
 </style>
 
@@ -319,9 +355,8 @@
 
   <!-- ============ PAGE 1: ROUND 1 ============ -->
   <section class="page" id="page-1">
-    <h2>Round 1: choose your analysis set</h2>
     <div class="instructions">
-      <span class="ilabel">Instructions</span>
+      <h2 class="ilabel">Round 1: choose your analysis set</h2>
       <p>Pick one set and run the analysis. Read the result, then give your verdict. The truth is revealed after you lock it in.</p>
     </div>
     <div class="drawer" id="details">
@@ -335,53 +370,75 @@
     <div class="sets" id="r1sets"></div>
     <div class="btnrow"><button type="button" class="btn primary" id="r1run" disabled>Run the analysis</button></div>
     <div id="r1result" hidden>
-      <div class="plotwrap"><div id="r1plot"></div></div>
-      <p class="readout" id="r1read"></p>
-      <p class="prompt" id="r1vq" style="margin-top:1rem">Based on this set, what does Compound X do?</p>
-      <div class="choices" id="r1verdict"></div>
-      <div class="btnrow"><button type="button" class="btn primary" id="r1lock" disabled>Lock in my verdict</button></div>
+      <div class="vizrow">
+        <div class="plotwrap"><div id="r1plot"></div></div>
+        <div class="vizside">
+          <p class="readout" id="r1read"></p>
+          <div>
+            <p class="prompt" id="r1vq">Based on this set, what does Compound X do?</p>
+            <div class="choices" id="r1verdict"></div>
+            <div class="btnrow"><button type="button" class="btn primary" id="r1lock" disabled>Lock in my verdict</button></div>
+          </div>
+        </div>
+      </div>
     </div>
     <div id="r1reveal" hidden></div>
   </section>
 
   <!-- ============ PAGE 2: ROUND 2 ============ -->
   <section class="page" id="page-2">
-    <h2>Round 2: predict, then run</h2>
     <div class="instructions">
-      <span class="ilabel">Instructions</span>
-      <p>You know the truth now. Before you run each remaining set, predict what it will say.</p>
+      <h2 class="ilabel">Round 2: predict, then run</h2>
+      <p>You know the truth now. Predict what each remaining set will say. The analysis runs as soon as you choose, and you can change your prediction afterwards.</p>
     </div>
     <div id="r2"></div>
-    <div id="r2done" hidden><div class="fb good">Both sets run. Next: see all three on the validity map.</div></div>
   </section>
 
   <!-- ============ PAGE 3: VALIDITY MAP ============ -->
   <section class="page" id="page-3">
-    <h2>Two different questions</h2>
-    <p>Every analysis set answers two separate questions. Here is where your three landed.</p>
+    <div class="instructions">
+      <h2 class="ilabel">Two different questions</h2>
+      <p>Every analysis set answers two separate questions. Here is where your three landed. Hover over or tap an axis name to see what it measures, then read the takeaway.</p>
+    </div>
     <div class="maprow">
-      <div class="mapwrap"><div id="map"></div></div>
-      <div class="defs">
-        <div class="def"><h4>Internal validity</h4><p>Whether the study's findings accurately reflect the relationship being investigated within the study population. Selection bias attacks this one.</p></div>
-        <div class="def"><h4>External validity (generalizability)</h4><p>Whether those findings can reasonably apply to other populations, settings, or circumstances. A narrow sample limits this one.</p></div>
+      <div class="mapwrap">
+        <div class="mapbox">
+          <div id="map"></div>
+          <div class="tip int" id="tipInt" role="tooltip" hidden><h4>Internal validity</h4><p>Whether the study's findings accurately reflect the relationship being investigated within the study population. Selection bias attacks this one.</p><button type="button" class="tclose" aria-label="Hide definition">&times;</button></div>
+          <div class="tip ext" id="tipExt" role="tooltip" hidden><h4>External validity (generalizability)</h4><p>Whether those findings can reasonably apply to other populations, settings, or circumstances. A narrow sample limits this one.</p><button type="button" class="tclose" aria-label="Hide definition">&times;</button></div>
+        </div>
+      </div>
+      <div class="fb info">
+        <p><strong>The takeaway</strong></p>
+        <p>A sample that differs from the population is an external validity problem: what you learn may not carry over. A sample that got in for reasons tied to the treatment or the outcome is an internal validity problem: selection bias changes what the study says is true.</p>
+        <p>So the question to ask is not “does my sample look like the population?” It is “did the way they got in depend on what I am measuring?”</p>
       </div>
     </div>
-    <table class="mtable" id="mtable"></table>
-    <p class="small">Vertical position is internal validity: how far each set's estimate sits from the true effect of 0. Horizontal position is external validity: how far the set's average severity sits from the colony's average, in standard deviations of the colony.</p>
-    <div class="fb info">
-      <p><strong>The takeaway</strong></p>
-      <p>A sample that differs from the population is an external validity problem: what you learn may not carry over. A sample that got in for reasons tied to the treatment or the outcome is an internal validity problem: selection bias changes what the study says is true.</p>
-      <p>So the question to ask is not “does my sample look like the population?” It is “did the way they got in depend on what I am measuring?”</p>
+    <div class="drawer">
+      <button type="button" class="dhead" id="mthead" aria-expanded="true" aria-controls="mtpanel">
+        <span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
+        <span class="dtitle">The three sets in numbers</span>
+      </button>
+      <div class="dpanel" id="mtpanel" role="region" aria-label="The three sets in numbers"><table class="mtable" id="mtable"></table></div>
+    </div>
+    <div class="drawer">
+      <button type="button" class="dhead" id="howhead" aria-expanded="false" aria-controls="howpanel">
+        <span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
+        <span class="dtitle">How the map is drawn</span>
+      </button>
+      <div class="dpanel" id="howpanel" role="region" aria-label="How the map is drawn" hidden><p class="small">Vertical position is internal validity: how far each set's estimate sits from the true effect of 0. Horizontal position is external validity: how far the set's average severity sits from the colony's average, in standard deviations of the colony.</p></div>
     </div>
   </section>
 
   <!-- ============ PAGE 4: SANDBOX ============ -->
   <section class="page" id="page-4">
-    <h2>Sandbox: build any analysis set</h2>
     <div class="instructions">
-      <span class="ilabel">Instructions</span>
+      <h2 class="ilabel">Sandbox: build any analysis set</h2>
       <p>Combine filters and watch the two gauges. Every setting recomputes the analysis from the same 240 mice. Two questions below ask you to set the filters a particular way and read what happened.</p>
     </div>
+    <div class="vizrow">
+      <div class="plotwrap sticky"><div id="sbplot"></div></div>
+      <div class="vizside">
     <div class="filters" id="filters">
       <fieldset class="f"><legend>Sex</legend><div class="seg">
         <label><input type="radio" name="fsex" value="" checked><span>All</span></label>
@@ -409,13 +466,20 @@
       </div></fieldset>
     </div>
     <div class="btnrow"><button type="button" class="btn plain" id="sbreset">Reset filters</button><span class="ncount" id="sbn"></span></div>
+    <p class="readout" id="sbread"></p>
     <div class="gauges">
       <div class="gauge"><div class="glabel"><span>Internal validity</span><span class="gpct" id="gIntPct"></span></div><div class="gbar"><div class="gfill" id="gIntFill"></div></div><div class="gread" id="gIntRead"></div></div>
       <div class="gauge"><div class="glabel"><span>External validity</span><span class="gpct" id="gExtPct"></span></div><div class="gbar"><div class="gfill" id="gExtFill"></div></div><div class="gread" id="gExtRead"></div></div>
     </div>
-    <div class="plotwrap"><div id="sbplot"></div></div>
-    <p class="readout" id="sbread"></p>
-    <p class="small">The internal validity gauge compares the set's Compound X minus vehicle estimate with the true effect of 0, and reaches empty at 1.5 points off. The external validity gauge is the distance between the set's mean severity and the colony's mean severity, in standard deviations of the colony, and reaches empty at 0.8 SD.</p>
+      </div>
+    </div>
+    <div class="drawer">
+      <button type="button" class="dhead" id="notehead" aria-expanded="false" aria-controls="notepanel">
+        <span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
+        <span class="dtitle">How the gauges are computed</span>
+      </button>
+      <div class="dpanel" id="notepanel" role="region" aria-label="How the gauges are computed" hidden><p class="small">The internal validity gauge compares the set's Compound X minus vehicle estimate with the true effect of 0, and reaches empty at 1.5 points off. The external validity gauge is the distance between the set's mean severity and the colony's mean severity, in standard deviations of the colony, and reaches empty at 0.8 SD.</p></div>
+    </div>
     <div class="quiz" id="q1">
       <div class="qh">Question 1</div>
       <p class="qsetup">Set <strong>Sex</strong> to <strong>Females</strong> and leave every other filter on All.</p>
@@ -430,7 +494,7 @@
       <div class="opts" role="radiogroup" aria-label="The result reads as a benefit. Should it go in the report?"></div>
       <div class="btnrow"><button type="button" class="btn primary qsubmit" disabled>Submit</button><span class="qhint"></span></div>
     </div>
-    <div id="sbdone" hidden><div class="fb good" style="margin-top:1rem">Both questions answered. Next: finish the activity.</div></div>
+    <div id="sbdone" hidden><div class="fb good" style="margin-top:0">Both questions answered. Keep playing with the filters and see which settings move one gauge and leave the other alone. Press Next when you are done.</div></div>
   </section>
 
   <!-- ============ PAGE 5: CONGRATS ============ -->
@@ -467,7 +531,7 @@
 <script>
 (function () {
   "use strict";
-  var T = {"SH.title": "Who Gets Counted", "SH.back": "Back", "SH.next": "Next", "SH.ilabel": "Instructions", "SH.armC": "Vehicle", "SH.armT": "Compound X", "SH.yaxis": "Disease severity at week 8 (0 = healthy, 10 = severe)", "SH.diff": "Compound X minus vehicle", "SH.ci": "95% CI", "SH.points": "points", "SH.mice": "mice", "SH.meanLabel": "mean {m}", "SH.flagLegend": "Ringed dot = flagged during the study", "SH.ghostLegend": "Hollow dot = left out of this analysis", "SH.faintLegend": "Faded dot = not in this analysis", "SH.vHelp": "Compound X helps", "SH.vNone": "No effect", "SH.vHarm": "Compound X harms", "SH.readHelp": "This set says Compound X helps.", "SH.readNone": "This set says Compound X has no effect.", "SH.readHarm": "This set says Compound X harms.", "SH.truth": "<strong>The truth in this simulation:</strong> Compound X does nothing to severity. The true effect is 0.", "SH.setAname": "Every mouse as randomized", "SH.setAn": "240 mice", "SH.setAblurb": "All 240 mice, including the 62 flagged during the study for weight loss over 15% or interrupted dosing.", "SH.setBname": "Protocol-clean mice", "SH.setBn": "178 mice", "SH.setBblurb": "Drop the 62 flagged mice. The 178 that remain finished dosing on schedule with no welfare flags, so their week-8 scores are the cleanest in the study.", "SH.setCname": "Females only", "SH.setCn": "120 mice", "SH.setCblurb": "All 120 female mice as randomized, flagged or not. The lab's follow-up assays are validated in females, so this is the set that would go into the next figure.", "P1.band": "A randomized study. Three ways to count it.", "P1.lead": "A lab tested Compound X in 240 mice with a progressive disease. Each mouse was randomized to Compound X or vehicle, and every mouse was scored for disease severity at week 8. The data are in. You decide which mice go into the analysis, read what comes out, and say whether the compound works.", "P1.goalH": "Goal", "P1.goal": "Build an instinct for how the choice of who gets counted can change what a study says, and learn to tell a narrow sample from a biased one.", "P1.stepsH": "What you will do", "P1.step1": "Choose an analysis set, run it, and give your verdict on Compound X.", "P1.step2": "See the truth, and see exactly which mice your choice counted.", "P1.step3": "Predict what the other two sets will say, then run them.", "P1.step4": "Place all three on the validity map, then build your own sets in the sandbox and answer two questions.", "P2.h": "Round 1: choose your analysis set", "P2.instr": "Pick one set and run the analysis. Read the result, then give your verdict. The truth is revealed after you lock it in.", "P2.detH": "Study details", "P2.dMice": "Mice enrolled", "P2.vMice": "{N}, randomized within each sex: {nt} to Compound X, {nc} to vehicle", "P2.dSex": "Sex", "P2.vSex": "{nF} females, {nM} males", "P2.dAge": "Age at enrollment", "P2.vAge": "8 weeks ({n8} mice), 12 weeks ({n12} mice)", "P2.dRoom": "Housing", "P2.vRoom": "Rooms A, B and C ({nA}, {nB} and {nC} mice)", "P2.dBase": "Baseline severity", "P2.vBase": "Scored before dosing on the same 0 to 10 scale: {nMild} mild (2 or below), {nMod} moderate (above 2)", "P2.dDose": "Dosing", "P2.vDose": "Compound X or vehicle, daily for 8 weeks", "P2.dOut": "Outcome", "P2.vOut": "Disease severity at week 8, scored 0 (healthy) to 10 (severe) by a scorer blind to treatment", "P2.dFlag": "Flagged during the study", "P2.vFlag": "{nFlag} mice: {nWL} for weight loss over 15%, {nDose} for interrupted dosing. Flagged mice were still scored at week 8.", "P2.pick": "Which mice go into the analysis?", "P2.run": "Run the analysis", "P2.verdictQ": "Based on this set, what does Compound X do?", "P2.lock": "Lock in my verdict", "P2.yours": "Your verdict: <strong>{v}</strong>. {r}", "P2.revA": "You counted everyone, and the answer came out right. Randomization made the two arms comparable, and nothing you did afterwards broke that. The 62 flagged mice are the ringed dots. They are in the data, where they belong.", "P2.revB": "The 62 flagged mice were not a random 62. Compound X caused weight loss and dose interruptions in the frailest animals, so {ft} of the 120 Compound X mice were flagged against {fc} of the 120 vehicle mice. The hollow dots are the mice you dropped. Look where they sit: near the top of the Compound X column. Removing them took the compound arm's worst scores out of the comparison and manufactured a benefit.", "P2.revC": "Females only gave the right answer. Mice were randomized within each sex, and sex has nothing to do with how mice were flagged, so leaving out the males (the hollow dots) narrowed what you can say, not what is true. You have learned about females, who run milder than the colony as a whole. You have not learned about males.", "P2.allLine": "For comparison, all 240 mice as randomized: {d} {points} ({ci}).", "P2.nextHint": "Next: predict what the other two sets will say.", "P3.h": "Round 2: predict, then run", "P3.instr": "You know the truth now. Before you run each remaining set, predict what it will say.", "P3.predictQ": "What will this set say?", "P3.run": "Run it", "P3.hit": "You predicted <strong>{p}</strong>, and that is what it says.", "P3.miss": "You predicted <strong>{p}</strong>. It says <strong>{r}</strong>.", "P3.exA": "Counting everyone keeps randomization intact. The two arms are still comparable, so whatever difference appears between them is the compound's doing. Here that difference is nothing.", "P3.exB": "The flags came after randomization and fell on the compound's frailest mice ({ft} of 120, against {fc} of 120 on vehicle). Dropping them removed the compound arm's worst scores. The arms are no longer comparable, and a benefit appears that was never there.", "P3.exC": "Mice were randomized within each sex, and sex has nothing to do with how mice were flagged, so the female-only comparison is still a fair one. It is right, and it is narrow: females run milder than the colony, and you have learned about females.", "P3.done": "Both sets run. Next: see all three on the validity map.", "P4.h": "Two different questions", "P4.lede": "Every analysis set answers two separate questions. Here is where your three landed.", "P4.xTitle": "External validity", "P4.xLo": "Low", "P4.xHi": "High", "P4.yTitle": "Internal validity", "P4.yLo": "Low", "P4.yHi": "High", "P4.qTL": "Internally valid, narrow", "P4.qTR": "Valid on both counts", "P4.qBL": "Fails on both counts", "P4.qBR": "Generalizes, but biased", "P4.how": "Vertical position is internal validity: how far each set's estimate sits from the true effect of 0. Horizontal position is external validity: how far the set's average severity sits from the colony's average, in standard deviations of the colony.", "P4.colSet": "Analysis set", "P4.colEst": "Estimate", "P4.colN": "Mice", "P4.colInt": "Internal validity", "P4.colSD": "SD from the colony mean", "P4.intH": "Internal validity", "P4.intDef": "Whether the study's findings accurately reflect the relationship being investigated within the study population. Selection bias attacks this one.", "P4.extH": "External validity (generalizability)", "P4.extDef": "Whether those findings can reasonably apply to other populations, settings, or circumstances. A narrow sample limits this one.", "P4.takeH": "The takeaway", "P4.take1": "A sample that differs from the population is an external validity problem: what you learn may not carry over. A sample that got in for reasons tied to the treatment or the outcome is an internal validity problem: selection bias changes what the study says is true.", "P4.take2": "So the question to ask is not “does my sample look like the population?” It is “did the way they got in depend on what I am measuring?”", "P5.h": "Sandbox: build any analysis set", "P5.instr": "Combine filters and watch the two gauges. Every setting recomputes the analysis from the same 240 mice. Two questions below ask you to set the filters a particular way and read what happened.", "P5.fSex": "Sex", "P5.fAge": "Age at enrollment", "P5.fRoom": "Housing room", "P5.fBase": "Baseline severity", "P5.fFlag": "Flagged during the study", "P5.oAll": "All", "P5.oF": "Females", "P5.oM": "Males", "P5.o8": "8 weeks", "P5.o12": "12 weeks", "P5.oA": "Room A", "P5.oB": "Room B", "P5.oC": "Room C", "P5.oMild": "Mild only", "P5.oKeep": "Keep", "P5.oDrop": "Drop", "P5.reset": "Reset filters", "P5.nRead": "{n} of 240 mice in this set", "P5.gInt": "Internal validity", "P5.gExt": "External validity", "P5.gExtVal": "{z} SD", "P5.gIntRead": "Estimate {d}, true effect 0. Off by {abs}.", "P5.gIntFew": "Too few mice in one arm to estimate.", "P5.gExtRead": "Mean severity {ms} in this set, {mc} in the colony: {z} standard deviations from the colony mean.", "P5.gExtSame": "Mean severity matches the colony.", "P5.note": "The internal validity gauge compares the set's Compound X minus vehicle estimate with the true effect of 0, and reaches empty at 1.5 points off. The external validity gauge is the distance between the set's mean severity and the colony's mean severity, in standard deviations of the colony, and reaches empty at 0.8 SD.", "P5.q1H": "Question 1", "P5.q1setup": "Set <strong>Sex</strong> to <strong>Females</strong> and leave every other filter on All.", "P5.q1": "What happened to the two gauges, and why?", "P5.q1a": "Internal validity dropped. Without the males, Compound X and vehicle are no longer a fair comparison.", "P5.q1aN": "Look at the estimate. It is still close to 0, and the internal validity gauge is still near full. Mice were randomized within each sex, so the 60 Compound X females and 60 vehicle females are still a fair comparison.", "P5.q1b": "External validity dropped and internal validity held. The comparison is still fair, but it now describes females, who score lower than the colony as a whole.", "P5.q1ok": "Right. The female-only estimate is still near the truth. What changed is who it describes: females sit about half a standard deviation below the colony mean, so this result cannot simply be assumed to hold for males.", "P5.q1c": "Both dropped. Fewer mice means less of everything.", "P5.q1cN": "Fewer mice widen the confidence interval, but they do not push the estimate away from the truth in any particular direction. The internal validity gauge barely moved.", "P5.q1d": "Neither moved. 120 mice is still plenty.", "P5.q1dN": "Read the external validity gauge. Females score lower than the colony, so what you learn about them does not automatically carry to the males.", "P5.q2H": "Question 2", "P5.q2setup": "A coworker stops by: “Room B has always been our best room. Run Room B with the flagged mice dropped. I'm sure it worked there.” Set <strong>Housing room</strong> to <strong>Room B</strong> and <strong>Flagged during the study</strong> to <strong>Drop</strong>, and leave the rest on All.", "P5.q2": "The result reads as a benefit. Should it go in the report?", "P5.q2a": "Yes. The confidence interval excludes 0, so Compound X helps in Room B.", "P5.q2aN": "Set Flagged back to Keep and watch the Room B result. The benefit disappears. It was made by dropping the flagged mice, which fall mostly on Compound X's frailest animals, not by anything the compound did.", "P5.q2b": "Yes, but only as a Room B finding, not as a claim about the whole colony.", "P5.q2bN": "Narrowing the claim to Room B addresses external validity. The problem here is internal: the flagged mice were dropped again, and that is what manufactured the benefit. A smaller claim built on a biased comparison is still wrong.", "P5.q2c": "No. The benefit comes from dropping the flagged mice, and the room is beside the point.", "P5.q2ok": "Right. Put the flagged mice back and Room B reads like every other room: no effect. Two things were wrong with the request. The set was chosen after the fact because it looked good, and it dropped the mice whose loss favors Compound X.", "P5.q2d": "No. Room B is too small a sample to conclude anything.", "P5.q2dN": "Small samples make the confidence interval wide, and this interval still excludes 0. More Room B mice would not fix this: the benefit comes from dropping the flagged mice, and more mice would carry the same bias.", "P5.qSubmit": "Submit", "P5.qNeed": "Set the filters as described to answer.", "P5.qAgain": "Not quite. Pick another answer and submit again.", "P5.done": "Both questions answered. Next: finish the activity.", "CG.band": "Activity complete", "CG.p1": "You ran the same randomized study three ways and watched one of them lie.", "CG.p2": "Narrow samples limit what you can generalize. Samples selected on something tied to the treatment or the outcome change what looks true. The rest of this lesson is about spotting the second kind before the data come in.", "CG.p3": "Your round 1 choice: {s}. Your verdict: {v}.", "CG.prev": "Previous", "CG.restart": "Restart", "CG.home": "Activities Menu"};
+  var T = {"SH.title": "Who Gets Counted", "SH.back": "Back", "SH.next": "Next", "SH.armC": "Vehicle", "SH.armT": "Compound X", "SH.yaxis": "Disease severity at week 8 (0 = healthy, 10 = severe)", "SH.diff": "Compound X minus vehicle", "SH.ci": "95% CI", "SH.points": "points", "SH.mice": "mice", "SH.meanLabel": "mean {m}", "SH.flagLegend": "Ringed dot = flagged during the study", "SH.ghostLegend": "Hollow dot = left out of this analysis", "SH.faintLegend": "Faded dot = not in this analysis", "SH.vHelp": "Compound X helps", "SH.vNone": "No effect", "SH.vHarm": "Compound X harms", "SH.readHelp": "This set says Compound X helps.", "SH.readNone": "This set says Compound X has no effect.", "SH.readHarm": "This set says Compound X harms.", "SH.truth": "<strong>The truth in this simulation:</strong> Compound X does nothing to severity. The true effect is 0.", "SH.setAname": "Every mouse as randomized", "SH.setAn": "240 mice", "SH.setAblurb": "All 240 mice, including the 62 flagged during the study for weight loss over 15% or interrupted dosing.", "SH.setBname": "Protocol-clean mice", "SH.setBn": "178 mice", "SH.setBblurb": "Drop the 62 flagged mice. The 178 that remain finished dosing on schedule with no welfare flags, so their week-8 scores are the cleanest in the study.", "SH.setCname": "Females only", "SH.setCn": "120 mice", "SH.setCblurb": "All 120 female mice as randomized, flagged or not. The lab's follow-up assays are validated in females, so this is the set that would go into the next figure.", "P1.band": "A randomized study. Three ways to count it.", "P1.lead": "A lab tested Compound X in 240 mice with a progressive disease. Each mouse was randomized to Compound X or vehicle, and every mouse was scored for disease severity at week 8. The data are in. You decide which mice go into the analysis, read what comes out, and say whether the compound works.", "P1.goalH": "Goal", "P1.goal": "Build an instinct for how the choice of who gets counted can change what a study says, and learn to tell a narrow sample from a biased one.", "P1.stepsH": "What you will do", "P1.step1": "Choose an analysis set, run it, and give your verdict on Compound X.", "P1.step2": "See the truth, and see exactly which mice your choice counted.", "P1.step3": "Predict what the other two sets will say, then run them.", "P1.step4": "Place all three on the validity map, then build your own sets in the sandbox and answer two questions.", "P2.h": "Round 1: choose your analysis set", "P2.instr": "Pick one set and run the analysis. Read the result, then give your verdict. The truth is revealed after you lock it in.", "P2.detH": "Study details", "P2.dMice": "Mice enrolled", "P2.vMice": "{N}, randomized within each sex: {nt} to Compound X, {nc} to vehicle", "P2.dSex": "Sex", "P2.vSex": "{nF} females, {nM} males", "P2.dAge": "Age at enrollment", "P2.vAge": "8 weeks ({n8} mice), 12 weeks ({n12} mice)", "P2.dRoom": "Housing", "P2.vRoom": "Rooms A, B and C ({nA}, {nB} and {nC} mice)", "P2.dBase": "Baseline severity", "P2.vBase": "Scored before dosing on the same 0 to 10 scale: {nMild} mild (2 or below), {nMod} moderate (above 2)", "P2.dDose": "Dosing", "P2.vDose": "Compound X or vehicle, daily for 8 weeks", "P2.dOut": "Outcome", "P2.vOut": "Disease severity at week 8, scored 0 (healthy) to 10 (severe) by a scorer blind to treatment", "P2.dFlag": "Flagged during the study", "P2.vFlag": "{nFlag} mice: {nWL} for weight loss over 15%, {nDose} for interrupted dosing. Flagged mice were still scored at week 8.", "P2.pick": "Which mice go into the analysis?", "P2.run": "Run the analysis", "P2.verdictQ": "Based on this set, what does Compound X do?", "P2.lock": "Lock in my verdict", "P2.yours": "Your verdict: <strong>{v}</strong>. {r}", "P2.revA": "You counted everyone, and the answer came out right. Randomization made the two arms comparable, and nothing you did afterwards broke that. The 62 flagged mice are the ringed dots. They are in the data, where they belong.", "P2.revB": "The 62 flagged mice were not a random 62. Compound X caused weight loss and dose interruptions in the frailest animals, so {ft} of the 120 Compound X mice were flagged against {fc} of the 120 vehicle mice. The hollow dots are the mice you dropped. Look where they sit: near the top of the Compound X column. Removing them took the compound arm's worst scores out of the comparison and manufactured a benefit.", "P2.revC": "Females only gave the right answer. Mice were randomized within each sex, and sex has nothing to do with how mice were flagged, so leaving out the males (the hollow dots) narrowed what you can say, not what is true. You have learned about females, who run milder than the colony as a whole. You have not learned about males.", "P2.allLine": "For comparison, all 240 mice as randomized: {d} {points} ({ci}).", "P3.h": "Round 2: predict, then run", "P3.instr": "You know the truth now. Predict what each remaining set will say. The analysis runs as soon as you choose, and you can change your prediction afterwards.", "P3.predictQ": "What will this set say?", "P3.hit": "You predicted <strong>{p}</strong>, and that is what it says.", "P3.miss": "You predicted <strong>{p}</strong>. It says <strong>{r}</strong>.", "P3.exA": "Counting everyone keeps randomization intact. The two arms are still comparable, so whatever difference appears between them is the compound's doing. Here that difference is nothing.", "P3.exB": "The flags came after randomization and fell on the compound's frailest mice ({ft} of 120, against {fc} of 120 on vehicle). Dropping them removed the compound arm's worst scores. The arms are no longer comparable, and a benefit appears that was never there.", "P3.exC": "Mice were randomized within each sex, and sex has nothing to do with how mice were flagged, so the female-only comparison is still a fair one. It is right, and it is narrow: females run milder than the colony, and you have learned about females.", "P4.h": "Two different questions", "P4.instr": "Every analysis set answers two separate questions. Here is where your three landed. Hover over or tap an axis name to see what it measures, then read the takeaway.", "P4.xTitle": "External validity", "P4.xLo": "Low", "P4.xHi": "High", "P4.yTitle": "Internal validity", "P4.yLo": "Low", "P4.yHi": "High", "P4.qTL": "Internally valid, narrow", "P4.qTR": "Valid on both counts", "P4.qBL": "Fails on both counts", "P4.qBR": "Generalizes, but biased", "P4.howH": "How the map is drawn", "P4.how": "Vertical position is internal validity: how far each set's estimate sits from the true effect of 0. Horizontal position is external validity: how far the set's average severity sits from the colony's average, in standard deviations of the colony.", "P4.tableH": "The three sets in numbers", "P4.colSet": "Analysis set", "P4.colEst": "Estimate", "P4.colN": "Mice", "P4.colInt": "Internal validity", "P4.colSD": "SD from the colony mean", "P4.intH": "Internal validity", "P4.intDef": "Whether the study's findings accurately reflect the relationship being investigated within the study population. Selection bias attacks this one.", "P4.extH": "External validity (generalizability)", "P4.extDef": "Whether those findings can reasonably apply to other populations, settings, or circumstances. A narrow sample limits this one.", "P4.tipClose": "Hide definition", "P4.takeH": "The takeaway", "P4.take1": "A sample that differs from the population is an external validity problem: what you learn may not carry over. A sample that got in for reasons tied to the treatment or the outcome is an internal validity problem: selection bias changes what the study says is true.", "P4.take2": "So the question to ask is not “does my sample look like the population?” It is “did the way they got in depend on what I am measuring?”", "P5.h": "Sandbox: build any analysis set", "P5.instr": "Combine filters and watch the two gauges. Every setting recomputes the analysis from the same 240 mice. Two questions below ask you to set the filters a particular way and read what happened.", "P5.fSex": "Sex", "P5.fAge": "Age at enrollment", "P5.fRoom": "Housing room", "P5.fBase": "Baseline severity", "P5.fFlag": "Flagged during the study", "P5.oAll": "All", "P5.oF": "Females", "P5.oM": "Males", "P5.o8": "8 weeks", "P5.o12": "12 weeks", "P5.oA": "Room A", "P5.oB": "Room B", "P5.oC": "Room C", "P5.oMild": "Mild only", "P5.oKeep": "Keep", "P5.oDrop": "Drop", "P5.reset": "Reset filters", "P5.nRead": "{n} of 240 mice in this set", "P5.gInt": "Internal validity", "P5.gExt": "External validity", "P5.gExtVal": "{z} SD", "P5.gIntRead": "Estimate {d}, true effect 0. Off by {abs}.", "P5.gIntFew": "Too few mice in one arm to estimate.", "P5.gExtRead": "Mean severity {ms} in this set, {mc} in the colony: {z} standard deviations from the colony mean.", "P5.gExtSame": "Mean severity matches the colony.", "P5.noteH": "How the gauges are computed", "P5.note": "The internal validity gauge compares the set's Compound X minus vehicle estimate with the true effect of 0, and reaches empty at 1.5 points off. The external validity gauge is the distance between the set's mean severity and the colony's mean severity, in standard deviations of the colony, and reaches empty at 0.8 SD.", "P5.q1H": "Question 1", "P5.q1setup": "Set <strong>Sex</strong> to <strong>Females</strong> and leave every other filter on All.", "P5.q1": "What happened to the two gauges, and why?", "P5.q1a": "Internal validity dropped. Without the males, Compound X and vehicle are no longer a fair comparison.", "P5.q1aN": "Look at the estimate. It is still close to 0, and the internal validity gauge is still near full. Mice were randomized within each sex, so the 60 Compound X females and 60 vehicle females are still a fair comparison.", "P5.q1b": "External validity dropped and internal validity held. The comparison is still fair, but it now describes females, who score lower than the colony as a whole.", "P5.q1ok": "Right. The female-only estimate is still near the truth. What changed is who it describes: females sit about half a standard deviation below the colony mean, so this result cannot simply be assumed to hold for males.", "P5.q1c": "Both dropped. Fewer mice means less of everything.", "P5.q1cN": "Fewer mice widen the confidence interval, but they do not push the estimate away from the truth in any particular direction. The internal validity gauge barely moved.", "P5.q1d": "Neither moved. 120 mice is still plenty.", "P5.q1dN": "Read the external validity gauge. Females score lower than the colony, so what you learn about them does not automatically carry to the males.", "P5.q2H": "Question 2", "P5.q2setup": "A coworker stops by: “Room B has always been our best room. Run Room B with the flagged mice dropped. I'm sure it worked there.” Set <strong>Housing room</strong> to <strong>Room B</strong> and <strong>Flagged during the study</strong> to <strong>Drop</strong>, and leave the rest on All.", "P5.q2": "The result reads as a benefit. Should it go in the report?", "P5.q2a": "Yes. The confidence interval excludes 0, so Compound X helps in Room B.", "P5.q2aN": "Set Flagged back to Keep and watch the Room B result. The benefit disappears. It was made by dropping the flagged mice, which fall mostly on Compound X's frailest animals, not by anything the compound did.", "P5.q2b": "Yes, but only as a Room B finding, not as a claim about the whole colony.", "P5.q2bN": "Narrowing the claim to Room B addresses external validity. The problem here is internal: the flagged mice were dropped again, and that is what manufactured the benefit. A smaller claim built on a biased comparison is still wrong.", "P5.q2c": "No. The benefit comes from dropping the flagged mice, and the room is beside the point.", "P5.q2ok": "Right. Put the flagged mice back and Room B reads like every other room: no effect. Two things were wrong with the request. The set was chosen after the fact because it looked good, and it dropped the mice whose loss favors Compound X.", "P5.q2d": "No. Room B is too small a sample to conclude anything.", "P5.q2dN": "Small samples make the confidence interval wide, and this interval still excludes 0. More Room B mice would not fix this: the benefit comes from dropping the flagged mice, and more mice would carry the same bias.", "P5.qSubmit": "Submit", "P5.qAgain": "Not quite. Pick another answer and submit again.", "P5.done": "Both questions answered. Keep playing with the filters and see which settings move one gauge and leave the other alone. Press Next when you are done.", "CG.band": "Activity complete", "CG.p1": "You ran the same randomized study three ways and watched one of them lie.", "CG.p2": "Narrow samples limit what you can generalize. Samples selected on something tied to the treatment or the outcome change what looks true. The rest of this lesson is about spotting the second kind before the data come in.", "CG.p3": "Your round 1 choice: {s}. Your verdict: {v}.", "CG.prev": "Previous", "CG.restart": "Restart", "CG.home": "Activities Menu"};
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
   function fill(s, vars) { return s.replace(/\{(\w+)\}/g, function (m, k) { return vars[k] !== undefined ? vars[k] : m; }); }
@@ -550,7 +614,8 @@ function zFromColony(sample,colony){if(!sample.length)return {z:0,ms:0,mc:colony
   var NS = "http://www.w3.org/2000/svg";
   function svg(tag, attrs, text) { var e = document.createElementNS(NS, tag); Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); }); if (text !== undefined) e.textContent = text; return e; }
   function jitter(id) { var h = (id * 2654435761) % 4294967296; return ((h % 1000) / 1000 - 0.5) * 2; }
-  var W = 560, H = 300, PL = 46, PR = 16, PT = 14, PB = 34, XC = 180, XT = 410, SPREAD = 78;
+  /* viewBox sized for the 3fr column it shares with its readout (same width as the validity map) */
+  var W = 400, H = 340, PL = 44, PR = 10, PT = 16, PB = 34, XC = 128, XT = 298, SPREAD = 60;
   function yOf(v) { return PT + (10 - v) / 10 * (H - PT - PB); }
   function plot(container, sample, ghosts) {
     var inSet = {}; sample.forEach(function (m) { inSet[m.id] = true; });
@@ -579,7 +644,7 @@ function zFromColony(sample,colony){if(!sample.length)return {z:0,ms:0,mc:colony
       [["c", XC, s.mc], ["t", XT, s.mt]].forEach(function (a) {
         var y = yOf(a[2]);
         root.appendChild(svg("line", { x1: a[1] - SPREAD - 8, x2: a[1] + SPREAD + 8, y1: y, y2: y, class: "mean " + a[0] }));
-        root.appendChild(svg("text", { x: a[1] + SPREAD + 12, y: y + 4, class: "mlabel " + a[0] }, fill(T["SH.meanLabel"], { m: a[2].toFixed(1) })));
+        root.appendChild(svg("text", { x: a[1] + SPREAD + 8, y: y - 6, "text-anchor": "end", class: "mlabel " + a[0] }, fill(T["SH.meanLabel"], { m: a[2].toFixed(1) })));
       });
     }
     container.innerHTML = "";
@@ -596,7 +661,7 @@ function zFromColony(sample,colony){if(!sample.length)return {z:0,ms:0,mc:colony
   /* ---------------- state ---------------- */
   var idx = 0, PAGES = 6;
   var r1 = { set: null, ran: false, verdict: null, locked: false };
-  var r2 = { order: [], pred: {}, ran: {} };
+  var r2 = { order: [], pred: {} };
 
   /* ---------------- page 1: study details drawer ---------------- */
   function buildDetails() {
@@ -609,10 +674,16 @@ function zFromColony(sample,colony){if(!sample.length)return {z:0,ms:0,mc:colony
       nFlag: n(function (m) { return m.flag; }), nWL: n(function (m) { return m.flagKind === "wl"; }), nDose: n(function (m) { return m.flagKind === "dose"; }) };
     var rows = [["dMice", "vMice"], ["dSex", "vSex"], ["dAge", "vAge"], ["dRoom", "vRoom"], ["dBase", "vBase"], ["dDose", "vDose"], ["dOut", "vOut"], ["dFlag", "vFlag"]];
     $("#dtable").innerHTML = "<tbody>" + rows.map(function (r) { return "<tr><th scope=\"row\">" + T["P2." + r[0]] + "</th><td>" + fill(T["P2." + r[1]], v) + "</td></tr>"; }).join("") + "</tbody>";
-    $("#dhead").addEventListener("click", function () {
-      var open = $("#dhead").getAttribute("aria-expanded") === "true";
-      $("#dhead").setAttribute("aria-expanded", open ? "false" : "true");
-      $("#dpanel").hidden = open;
+    drawer("#dhead", "#dpanel");
+  }
+  /* C4R SectionDrawer: the head toggles its panel; the initial aria-expanded sets the open state */
+  function drawer(head, panel) {
+    var h = $(head), p = $(panel);
+    p.hidden = h.getAttribute("aria-expanded") !== "true";
+    h.addEventListener("click", function () {
+      var open = h.getAttribute("aria-expanded") === "true";
+      h.setAttribute("aria-expanded", open ? "false" : "true");
+      p.hidden = open;
     });
   }
 
@@ -661,7 +732,6 @@ function zFromColony(sample,colony){if(!sample.length)return {z:0,ms:0,mc:colony
       ex.innerHTML = "<p>" + fill(T["P2.rev" + r1.set], { ft: FT, fc: FC }) + "</p>" +
         (r1.set === "A" ? "" : "<p>" + fill(T["P2.allLine"], { d: num(SETS.A.stats.d), points: T["SH.points"], ci: ciText(SETS.A.stats) }) + "</p>");
       box.appendChild(ex);
-      box.appendChild(el("p", "small", T["P2.nextHint"]));
       r2.order = ORDER.filter(function (k) { return k !== r1.set; });
       buildR2();
       sync();
@@ -671,7 +741,7 @@ function zFromColony(sample,colony){if(!sample.length)return {z:0,ms:0,mc:colony
   /* ---------------- page 2: round 2 ---------------- */
   function buildR2() {
     var box = $("#r2"); box.innerHTML = "";
-    r2.pred = {}; r2.ran = {};
+    r2.pred = {};
     r2.order.forEach(function (k, i) {
       var S = SETS[k];
       var blk = el("div", "r2block"); blk.dataset.set = k;
@@ -679,31 +749,30 @@ function zFromColony(sample,colony){if(!sample.length)return {z:0,ms:0,mc:colony
       blk.appendChild(setCard(k, false));
       blk.appendChild(el("p", "prompt", T["P3.predictQ"]));
       var ch = el("div", "choices");
+      /* the set runs the moment a prediction is chosen, and the prediction can be changed to compare */
+      var res = el("div", "vizrow"); res.hidden = true;
+      var pw = el("div", "plotwrap"); var pd = el("div", ""); pw.appendChild(pd); res.appendChild(pw);
+      var side = el("div", "vizside"); res.appendChild(side);
+      var rdp = el("p", "readout"); side.appendChild(rdp);
+      var out = el("div", ""); side.appendChild(out);
+      var plotted = false;
       VERDICTS.forEach(function (v) {
         var c = el("button", "choice", VNAME[v]); c.type = "button"; c.dataset.v = v;
-        c.addEventListener("click", function () { if (r2.ran[k]) return; r2.pred[k] = v; $$(".choice", ch).forEach(function (x) { x.classList.toggle("sel", x.dataset.v === v); }); run.disabled = false; });
+        c.addEventListener("click", function () {
+          r2.pred[k] = v;
+          $$(".choice", ch).forEach(function (x) { x.classList.toggle("sel", x.dataset.v === v); });
+          var s = S.stats;
+          if (!plotted) { plotted = true; res.hidden = false; plot(pd, S.sample, S.ghosts); rdp.innerHTML = estHTML(s); }
+          var rd = reading(s), hit = rd === v;
+          out.innerHTML = "";
+          out.appendChild(el("div", "fb " + (hit ? "good" : "bad"), "<p>" + fill(hit ? T["P3.hit"] : T["P3.miss"], { p: VNAME[v], r: VNAME[rd] }) + "</p><p>" + fill(T["P3.ex" + k], { ft: FT, fc: FC }) + "</p>"));
+          blk.classList.add("done");
+          sync();
+        });
         ch.appendChild(c);
       });
       blk.appendChild(ch);
-      var row = el("div", "btnrow"); var run = el("button", "btn primary", T["P3.run"]); run.type = "button"; run.disabled = true; row.appendChild(run); blk.appendChild(row);
-      var res = el("div", ""); res.hidden = true;
-      var pw = el("div", "plotwrap"); var pd = el("div", ""); pw.appendChild(pd); res.appendChild(pw);
-      var rdp = el("p", "readout"); res.appendChild(rdp);
-      var out = el("div", ""); res.appendChild(out);
       blk.appendChild(res);
-      run.addEventListener("click", function () {
-        if (r2.ran[k] || !r2.pred[k]) return;
-        r2.ran[k] = true; run.disabled = true;
-        $$(".choice", ch).forEach(function (x) { x.disabled = true; });
-        res.hidden = false;
-        var s = plot(pd, S.sample, S.ghosts);
-        rdp.innerHTML = estHTML(s);
-        var rd = reading(s), hit = rd === r2.pred[k];
-        out.appendChild(el("div", "fb " + (hit ? "good" : "bad"), "<p>" + fill(hit ? T["P3.hit"] : T["P3.miss"], { p: VNAME[r2.pred[k]], r: VNAME[rd] }) + "</p><p>" + fill(T["P3.ex" + k], { ft: FT, fc: FC }) + "</p>"));
-        blk.classList.add("done");
-        if (r2.order.every(function (x) { return r2.ran[x]; })) { $("#r2done").hidden = false; buildMap(); }
-        sync();
-      });
       box.appendChild(blk);
     });
   }
@@ -722,11 +791,21 @@ function zFromColony(sample,colony){if(!sample.length)return {z:0,ms:0,mc:colony
     root.appendChild(svg("text", { x: x1 - 10, y: y1 + 14, "text-anchor": "end", class: "quad" }, T["P4.qTR"]));
     root.appendChild(svg("text", { x: x0 + 10, y: y0 - 6, class: "quad" }, T["P4.qBL"]));
     root.appendChild(svg("text", { x: x1 - 10, y: y0 - 6, "text-anchor": "end", class: "quad" }, T["P4.qBR"]));
-    root.appendChild(svg("text", { x: (x0 + x1) / 2, y: MH - 10, "text-anchor": "middle", class: "atitle" }, T["P4.xTitle"] + " →"));
+    /* axis names carry the validity definitions as tooltips (hover, focus, or tap) */
+    function axisHint(cls, x, y, rotate, label, tipId) {
+      var g = svg("g", { class: "axhint " + cls, tabindex: "0", role: "button", "aria-expanded": "false", "aria-controls": tipId });
+      if (rotate) g.setAttribute("transform", "rotate(-90 " + x + " " + y + ")");
+      var w = label.length * 6.2;
+      g.appendChild(svg("text", { x: x, y: y, "text-anchor": "middle", class: "atitle" }, label + " →"));
+      g.appendChild(svg("line", { x1: x - w / 2 - 8, x2: x + w / 2 - 8, y1: y + 3, y2: y + 3, class: "ul" }));
+      g.appendChild(svg("rect", { x: x - w / 2 - 14, y: y - 14, width: w + 28, height: 22, fill: "transparent" }));
+      return g;
+    }
+    root.appendChild(axisHint("ext", (x0 + x1) / 2, MH - 10, false, T["P4.xTitle"], "tipExt"));
     root.appendChild(svg("text", { x: x0, y: y0 + 16, class: "aend" }, T["P4.xLo"]));
     root.appendChild(svg("text", { x: x1, y: y0 + 16, "text-anchor": "end", class: "aend" }, T["P4.xHi"]));
     var ym = (y0 + y1) / 2;
-    root.appendChild(svg("text", { x: 16, y: ym, "text-anchor": "middle", class: "atitle", transform: "rotate(-90 16 " + ym + ")" }, T["P4.yTitle"] + " →"));
+    root.appendChild(axisHint("int", 16, ym, true, T["P4.yTitle"], "tipInt"));
     root.appendChild(svg("text", { x: x0 - 6, y: y0 - 2, "text-anchor": "end", class: "aend" }, T["P4.yLo"]));
     root.appendChild(svg("text", { x: x0 - 6, y: y1 + 12, "text-anchor": "end", class: "aend" }, T["P4.yHi"]));
     var rows = [], boxes = [], CW = 6.6, LH = 14; /* approximate label metrics for collision checks */
@@ -748,9 +827,33 @@ function zFromColony(sample,colony){if(!sample.length)return {z:0,ms:0,mc:colony
       rows.push({ k: k, S: S, ex: ex, it: it });
     });
     $("#map").innerHTML = ""; $("#map").appendChild(root);
+    buildTips();
     var tb = $("#mtable");
     tb.innerHTML = "<thead><tr><th>" + T["P4.colSet"] + "</th><th class=\"num\">" + T["P4.colN"] + "</th><th class=\"num\">" + T["P4.colEst"] + "</th><th class=\"num\">" + T["P4.colInt"] + "</th><th class=\"num\">" + T["P4.colSD"] + "</th></tr></thead>" +
       "<tbody>" + rows.map(function (r) { return "<tr><td>" + r.S.name + "</td><td class=\"num\">" + r.S.sample.length + "</td><td class=\"num\">" + num(r.S.stats.d) + " (" + num(r.S.stats.lo) + " to " + num(r.S.stats.hi) + ")</td><td class=\"num\">" + pct(r.it.score) + "</td><td class=\"num\">" + num(r.ex.z) + "</td></tr>"; }).join("") + "</tbody>";
+  }
+
+  /* validity definitions: hover or keyboard focus on a mouse device; on a touch device both start open and a tap hides them */
+  function buildTips() {
+    var touch = !!(window.matchMedia && window.matchMedia("(hover: none)").matches);
+    [["int", "#tipInt"], ["ext", "#tipExt"]].forEach(function (pair) {
+      var g = $("#map .axhint." + pair[0]), tip = $(pair[1]);
+      function show() { tip.hidden = false; g.setAttribute("aria-expanded", "true"); }
+      function hide() { tip.hidden = true; g.setAttribute("aria-expanded", "false"); }
+      function toggle() { if (tip.hidden) show(); else hide(); }
+      if (touch) {
+        g.addEventListener("click", toggle);
+        tip.addEventListener("click", hide);
+        show();
+      } else {
+        g.addEventListener("mouseenter", show);
+        g.addEventListener("mouseleave", hide);
+        g.addEventListener("focus", show);
+        g.addEventListener("blur", hide);
+        g.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
+      }
+      $(".tclose", tip).addEventListener("click", function (e) { e.stopPropagation(); hide(); });
+    });
   }
 
   /* ---------------- page 4: sandbox ---------------- */
@@ -779,25 +882,23 @@ function zFromColony(sample,colony){if(!sample.length)return {z:0,ms:0,mc:colony
     $("#gIntRead").textContent = it.few ? T["P5.gIntFew"] : fill(T["P5.gIntRead"], { d: num(s.d), abs: num(it.off) });
     $("#gExtFill").style.width = pct(ex.score); $("#gExtPct").textContent = fill(T["P5.gExtVal"], { z: num(ex.z) });
     $("#gExtRead").textContent = Math.abs(ex.z) < 0.005 ? T["P5.gExtSame"] : fill(T["P5.gExtRead"], { ms: ex.ms.toFixed(2), mc: ex.mc.toFixed(2), z: num(ex.z) });
-    quizSync(f);
   }
 
-  /* sandbox questions: each needs a filter state, then one answer; wrong answers can be retried */
+  /* sandbox questions: the setup invites a filter state but does not require it; wrong answers can be retried */
   var QUIZ = [
-    { id: "q1", opts: ["a", "b", "c", "d"], correct: "b", match: function (f) { return f.fsex === "F" && !f.fage && !f.froom && !f.fbase && !f.fflag; } },
-    { id: "q2", opts: ["a", "b", "c", "d"], correct: "c", match: function (f) { return !f.fsex && !f.fage && f.froom === "B" && !f.fbase && f.fflag === "drop"; } }
+    { id: "q1", opts: ["a", "b", "c", "d"], correct: "b" },
+    { id: "q2", opts: ["a", "b", "c", "d"], correct: "c" }
   ];
   var MARK_OK = "<svg class=\"mark\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9.5\"/><path d=\"M8 12.5l2.5 2.5L16 9.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>";
   var MARK_NO = "<svg class=\"mark\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9.5\"/><path d=\"M9 9l6 6M15 9l-6 6\" stroke-linecap=\"round\"/></svg>";
   QUIZ.forEach(function (q) { q.sel = null; q.done = false; q.wrong = false; });
-  function quizSync(f) {
+  function quizSync() {
     QUIZ.forEach(function (q) {
       if (q.done) return;
-      var box = $("#" + q.id), matched = q.match(f);
-      $(".qsubmit", box).disabled = !(matched && q.sel);
+      var box = $("#" + q.id);
+      $(".qsubmit", box).disabled = !q.sel;
       var h = $(".qhint", box);
-      if (!matched) { h.textContent = T["P5.qNeed"]; h.classList.remove("again"); }
-      else if (q.wrong) { h.textContent = T["P5.qAgain"]; h.classList.add("again"); }
+      if (q.wrong) { h.textContent = T["P5.qAgain"]; h.classList.add("again"); }
       else { h.textContent = ""; h.classList.remove("again"); }
     });
   }
@@ -813,12 +914,12 @@ function zFromColony(sample,colony){if(!sample.length)return {z:0,ms:0,mc:colony
           if (q.done) return;
           q.sel = o; q.wrong = false;
           $$(".opt", opts).forEach(function (x) { x.classList.remove("no"); x.classList.toggle("sel", x.dataset.o === o); });
-          quizSync(sbFilters());
+          quizSync();
         });
         opts.appendChild(lab);
       });
       $(".qsubmit", box).addEventListener("click", function () {
-        if (q.done || !q.sel || !q.match(sbFilters())) return;
+        if (q.done || !q.sel) return;
         var lab = $(".opt[data-o=\"" + q.sel + "\"]", opts);
         if (q.sel === q.correct) {
           q.done = true; lab.classList.add("ok"); box.classList.add("done");
@@ -829,13 +930,14 @@ function zFromColony(sample,colony){if(!sample.length)return {z:0,ms:0,mc:colony
           sync();
         } else {
           q.wrong = true; lab.classList.add("no");
-          quizSync(sbFilters());
+          quizSync();
         }
       });
     });
   }
   function buildSandbox() {
-    buildQuiz();
+    buildQuiz(); quizSync();
+    drawer("#notehead", "#notepanel");
     $$("#filters input").forEach(function (i) { i.addEventListener("change", sandbox); });
     $("#sbreset").addEventListener("click", function () { $$("#filters input").forEach(function (i) { i.checked = i.value === ""; }); sandbox(); });
     sandbox();
@@ -844,7 +946,7 @@ function zFromColony(sample,colony){if(!sample.length)return {z:0,ms:0,mc:colony
   /* ---------------- navigation ---------------- */
   function canAdvance() {
     if (idx === 1) return r1.locked;
-    if (idx === 2) return r2.order.length > 0 && r2.order.every(function (k) { return r2.ran[k]; });
+    if (idx === 2) return r2.order.length > 0 && r2.order.every(function (k) { return r2.pred[k]; });
     if (idx === 4) return QUIZ.every(function (q) { return q.done; });
     return idx < PAGES - 1;
   }
@@ -864,6 +966,7 @@ function zFromColony(sample,colony){if(!sample.length)return {z:0,ms:0,mc:colony
 
   buildDetails();
   buildR1();
+  buildMap(); drawer("#mthead", "#mtpanel"); drawer("#howhead", "#howpanel");
   buildSandbox();
   sync();
 })();
